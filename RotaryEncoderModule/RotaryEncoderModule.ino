@@ -23,7 +23,7 @@
 // The serial interface allows the state machine to set position thresholds which generate Bpod events when crossed, and to reset the encoder position.
 // The MATLAB interface can capture streaming position data and set new thresholds.
 
-#define FirmwareVersion 6
+#define FirmwareVersion 7
 #define HARDWARE_VERSION 1 // NOTE: SET THIS TO MATCH THE TARGET VERSION OF THE MODULE! You MUST uncomment the next line if compiling for HARDWARE_VERSION 2
 // #include "QuadEncoder.h"
 
@@ -479,12 +479,12 @@ void loop() {
         }
       break;
       case 'P': // Set current encoder position
-        if (opSource == 0) {
-          EncoderPos = myUSB.readInt16();
-          #if HARDWARE_VERSION == 2
-            hwEnc.write((uint32_t)EncoderPos);
-          #endif
+        EncoderPos = readInt16FromSource(opSource);
+        #if HARDWARE_VERSION == 2
+          hwEnc.write((uint32_t)EncoderPos);
+        #endif
           nWraps = 0;
+        if (opSource == 0) {
           myUSB.writeByte(1);
         }
       break;
@@ -719,6 +719,22 @@ byte readByteFromSource(byte opSource) {
     #if HARDWARE_VERSION == 1 
       case 2:
         return OutputStreamCOM.readByte();
+      break;
+    #endif
+  }
+}
+
+int16_t readInt16FromSource(byte opSource) {
+  switch (opSource) {
+    case 0:
+      return myUSB.readInt16();
+    break;
+    case 1:
+      return StateMachineCOM.readInt16();
+    break;
+    #if HARDWARE_VERSION == 1 
+      case 2:
+        return OutputStreamCOM.readInt16();
       break;
     #endif
   }
